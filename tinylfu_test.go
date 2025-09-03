@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nicolaspearson/go-tinylfu"
 	"github.com/stretchr/testify/require"
-	"github.com/vmihailenco/go-tinylfu"
 )
 
 func TestCache(t *testing.T) {

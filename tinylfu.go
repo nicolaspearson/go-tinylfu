@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/IGLOU-EU/go-wildcard/v2"
 	"github.com/cespare/xxhash/v2"
 )
 
@@ -156,6 +157,14 @@ func (t *T) Set(newItem *Item) {
 	}
 }
 
+func (t *T) DelMatches(key string) {
+	for k, val := range t.data {
+		if wildcard.Match(key, k) {
+			t.del(val)
+		}
+	}
+}
+
 func (t *T) Del(key string) {
 	if val, ok := t.data[key]; ok {
 		t.del(val)
@@ -204,5 +213,11 @@ func (t *SyncT) Set(item *Item) {
 func (t *SyncT) Del(key string) {
 	t.mu.Lock()
 	t.t.Del(key)
+	t.mu.Unlock()
+}
+
+func (t *SyncT) DelMatches(key string) {
+	t.mu.Lock()
+	t.t.DelMatches(key)
 	t.mu.Unlock()
 }

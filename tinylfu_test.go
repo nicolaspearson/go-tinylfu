@@ -55,6 +55,69 @@ func TestCache(t *testing.T) {
 	}
 }
 
+func TestDelMatches(t *testing.T) {
+	cache := tinylfu.New(1e3, 10e3)
+	keys := []string{"one:test:alpha", "one:test:bravo", "two:test", "three"}
+
+	for _, key := range keys {
+		cache.Set(&tinylfu.Item{
+			Key:   key,
+			Value: key,
+		})
+
+		got, ok := cache.Get(key)
+		require.True(t, ok)
+		require.Equal(t, key, got)
+	}
+
+	for _, key := range keys {
+		got, ok := cache.Get(key)
+		require.True(t, ok)
+		require.Equal(t, key, got)
+
+		cache.Set(&tinylfu.Item{
+			Key:   key,
+			Value: key + key,
+		})
+	}
+
+	for _, key := range keys {
+		got, ok := cache.Get(key)
+		require.True(t, ok)
+		require.Equal(t, key+key, got)
+	}
+
+	// Delete specific wild card matches
+	cache.DelMatches("one:*:alpha")
+	_, ok := cache.Get("one:test:alpha")
+	require.False(t, ok)
+
+	_, ok = cache.Get("one:test:bravo")
+	require.True(t, ok)
+
+	// Re-add the first key
+	cache.Set(&tinylfu.Item{
+		Key:   "one:test:alpha",
+		Value: "one:test:alpha",
+	})
+
+	_, ok = cache.Get("one:test:alpha")
+	require.True(t, ok)
+
+	// Delete all wild card matches
+	cache.DelMatches("one:*")
+	_, ok = cache.Get("one:test:alpha")
+	require.False(t, ok)
+	_, ok = cache.Get("one:test:bravo")
+	require.False(t, ok)
+
+	// Should only contain remaining keys
+	_, ok = cache.Get("two:test")
+	require.True(t, ok)
+	_, ok = cache.Get("three")
+	require.True(t, ok)
+}
+
 func TestOOM(t *testing.T) {
 	keys := make([]string, 10000)
 	for i := range keys {
